@@ -1,6 +1,7 @@
 import { Scene } from "phaser";
-import { Room, Client, getStateCallbacks } from "colyseus.js";
-import { getUserName } from "../utils/discordSDK";
+import { Room, Client, getStateCallbacks } from "@colyseus/sdk";
+import { getUserName } from "@/hooks/use-discord-auth";
+import { EventBus } from "../EventBus";
 
 export class Game extends Scene {
   room: Room;
@@ -16,6 +17,7 @@ export class Game extends Scene {
     grid.setScale(0.6);
 
     await this.connect();
+    if (!this.room) return;
 
     const $ = getStateCallbacks(this.room);
 
@@ -62,28 +64,28 @@ export class Game extends Scene {
         color: "#000000",
       })
       .setOrigin(0.5);
+
+    EventBus.emit("current-scene-ready", this);
   }
 
   async connect() {
-    const url =
-      location.host === "localhost:3000" ? `ws://localhost:3001` : `wss://${location.host}/.proxy/api/colyseus`;
-
-    const client = new Client(`${url}`);
-
+    // Colyseus SDK auto-detects discordsays.com and adds /.proxy/colyseus prefix
+    const client = new Client(`wss://${location.host}`);
     try {
       this.room = await client.joinOrCreate("game", {
         // Let's send our client screen dimensions to the server for initial positioning
         screenWidth: this.game.config.width,
         screenHeight: this.game.config.height,
       });
-
-      this.room.onMessage("move", (message) => {
-        //console.log("Move message received:", message);
-      });
-
-      console.log("Successfully connected!");
     } catch (e) {
-      console.log(`Could not connect with the server: ${e}`);
+      console.error("Failed to join room:", e);
+      return;
     }
+
+    this.room.onMessage("move", (message) => {
+      //console.log("Move message received:", message);
+    });
+
+    console.log("Successfully connected!");
   }
 }

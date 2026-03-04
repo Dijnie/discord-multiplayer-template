@@ -1,7 +1,7 @@
-import { Client, Room } from "colyseus";
+import { Client, CloseCode, Room } from "colyseus";
 import { GameState, Draggables } from "../schemas/GameState";
 
-export class GameRoom extends Room<GameState> {
+export class GameRoom extends Room {
   state = new GameState();
   maxClients = 25; // Current Discord limit is 25
 
@@ -20,7 +20,7 @@ export class GameRoom extends Room<GameState> {
       "nought_2",
       "nought_3",
     ];
-    draggableList.forEach((draggable, index) => {
+    draggableList.forEach((draggable) => {
       const draggableObject = new Draggables();
 
       const offset = 500;
@@ -39,7 +39,6 @@ export class GameRoom extends Room<GameState> {
     });
 
     this.onMessage("move", (client, message) => {
-      // Update image position based on data received
       const image = this.state.draggables.get(message.imageId);
       if (image) {
         image.x = message.x;
@@ -49,11 +48,12 @@ export class GameRoom extends Room<GameState> {
     });
   }
 
-  onJoin(client: Client, options?: any, auth?: any): void | Promise<any> {
+  onJoin(client: Client): void | Promise<any> {
     console.log(`Client joined: ${client.sessionId}`);
   }
 
-  onLeave(client: Client, consented: boolean): void | Promise<any> {
-    console.log(`Client left: ${client.sessionId}`);
+  onLeave(client: Client, code: number): void | Promise<any> {
+    const consented = code === CloseCode.CONSENTED;
+    console.log(`Client left: ${client.sessionId} (consented: ${consented})`);
   }
 }

@@ -9,7 +9,7 @@
       "forceConsistentCasingInFileNames": true,
       "experimentalDecorators": true,
       "emitDecoratorMetadata": true,
-
+      "useDefineForClassFields": false
     },
     "include": ["src/**/*.ts", "./environment.d.ts"],
     "exclude": ["node_modules"]

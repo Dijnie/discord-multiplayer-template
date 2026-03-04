@@ -1,5 +1,5 @@
 import { Scene } from "phaser";
-import { authorizeDiscordUser } from "../utils/discordSDK";
+import { EventBus } from "../EventBus";
 
 export class MainMenu extends Scene {
   constructor() {
@@ -26,9 +26,10 @@ export class MainMenu extends Scene {
       })
       .setOrigin(0.5);
 
-    this.input.once("pointerdown", async () => {
-      await authorizeDiscordUser();
+    this.input.once("pointerdown", () => {
       this.scene.start("Game");
     });
+
+    EventBus.emit("current-scene-ready", this);
   }
 }
