@@ -50,9 +50,8 @@ export const useDiscordAuth = create<DiscordAuthState>((set, get) => ({
       const { code } = await discordSdk.commands.authorize({
         client_id: process.env.NEXT_PUBLIC_CLIENT_ID!,
         response_type: "code",
-        state: "",
-        prompt: "none",
-        scope: ["identify", "applications.commands"],
+        state: "DISCORD_OAUTH_STATE",
+        scope: ["identify"],
       });
 
       set({ status: "Exchanging token..." });
