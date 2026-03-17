@@ -81,7 +81,8 @@ export const useDiscordAuth = create<DiscordAuthState>((set, get) => ({
             ? JSON.stringify(err)
             : String(err);
       console.error(`Discord auth error: ${message}`);
-      set({ status: message });
+      console.error("Full error object:", err);
+      set({ status: `Auth failed: ${message}` });
     } finally {
       initPromise = null;
     }

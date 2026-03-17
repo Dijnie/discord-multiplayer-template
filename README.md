@@ -6,6 +6,59 @@ This project template is designed to be used in conjunction with our [Creating M
 
 You need to have Node.js v21 or higher version.
 
+## Discord Developer Portal Setup
+
+Before running the project, you need to configure your Discord application correctly. Without this setup, you will get an `OAuth2 Authorize Error: Unknown Error` (code 5000) when the app tries to authenticate.
+
+### 1. Create a Discord Application
+
+Go to the [Discord Developer Portal](https://discord.com/developers/applications) and create a new application (or use an existing one). Note down the **Application ID** (also called Client ID).
+
+### 2. Enable Activities
+
+Navigate to **Settings > Activities** in your application's dashboard and enable the Activities feature. This is required because the app runs as a Discord Embedded Activity (inside an iframe within the Discord client). Without this, the SDK's `authorize` command will fail with code 5000.
+
+### 3. Configure OAuth2
+
+Go to **Settings > OAuth2** and:
+
+- **Copy the Client Secret** — This is a random alphanumeric string (e.g., `aBcDeFg1234567890`). **Do not confuse it with the Bot Token**, which has a different format (`base64.timestamp.hmac`). The client secret is used by the server to exchange the authorization code for an access token via Discord's `/oauth2/token` endpoint.
+- **Add a Redirect URL** — Add the following URL:
+  ```
+  https://<YOUR_CLIENT_ID>.discordusercontent.com
+  ```
+  Replace `<YOUR_CLIENT_ID>` with your Application ID. This is the default redirect URI format that Discord uses for Embedded Activities.
+
+### 4. Configure the `.env` File
+
+Copy `example.env` to `.env` and fill in the values:
+
+```env
+NEXT_PUBLIC_CLIENT_ID=<your-application-id>
+CLIENT_SECRET=<your-oauth2-client-secret>
+NODE_ENV='development'
+```
+
+### How the Auth Flow Works
+
+The authentication happens in two stages:
+
+1. **Client-side (`packages/client/src/hooks/use-discord-auth.ts`):**
+   - The Discord SDK calls `authorize()` with your `CLIENT_ID` and requested scopes (`identify`). Discord shows a consent screen to the user and returns an authorization `code`.
+
+2. **Server-side (`packages/server/src/server.ts`):**
+   - The client sends the `code` to the server's `/api/token` endpoint.
+   - The server exchanges this code for an `access_token` by calling Discord's OAuth2 API with the `CLIENT_ID`, `CLIENT_SECRET`, and the redirect URI.
+   - The `access_token` is returned to the client, which then calls `authenticate()` to complete the session.
+
+### Common Errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| Code 5000 "Unknown Error" | Activities not enabled, or redirect URL missing | Enable Activities + add redirect URL in Developer Portal |
+| Token exchange failed (400) | Wrong `CLIENT_SECRET` (e.g., using bot token instead) | Copy the correct OAuth2 Client Secret from Developer Portal |
+| Token exchange failed (401) | `CLIENT_ID` mismatch between client and server | Ensure `.env` has the correct `NEXT_PUBLIC_CLIENT_ID` |
+
 ## Template Project Structure
 
 We have provided a default project structure to get you started. This is as follows:

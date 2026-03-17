@@ -31,25 +31,36 @@ const server = defineServer({
 
     // Fetch token from developer portal and return to the embedded app
     app.post("/api/token", async (req, res) => {
-      const response = await fetch(`https://discord.com/api/oauth2/token`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          client_id: process.env.NEXT_PUBLIC_CLIENT_ID,
-          client_secret: process.env.CLIENT_SECRET,
-          grant_type: "authorization_code",
-          code: req.body.code,
-          redirect_uri: `https://${process.env.NEXT_PUBLIC_CLIENT_ID}.discordusercontent.com`,
-        }),
-      });
+      try {
+        const response = await fetch(`https://discord.com/api/oauth2/token`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            client_id: process.env.NEXT_PUBLIC_CLIENT_ID,
+            client_secret: process.env.CLIENT_SECRET,
+            grant_type: "authorization_code",
+            code: req.body.code,
+            redirect_uri: `https://${process.env.NEXT_PUBLIC_CLIENT_ID}.discordusercontent.com`,
+          }),
+        });
 
-      const { access_token } = (await response.json()) as {
-        access_token: string;
-      };
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Discord token exchange error:", errorData);
+          return res.status(response.status).json(errorData);
+        }
 
-      res.send({ access_token });
+        const { access_token } = (await response.json()) as {
+          access_token: string;
+        };
+
+        res.send({ access_token });
+      } catch (error) {
+        console.error("Token exchange failed:", error);
+        res.status(500).json({ error: "Token exchange failed" });
+      }
     });
   },
 });
